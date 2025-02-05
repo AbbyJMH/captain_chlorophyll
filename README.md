@@ -11,3 +11,7 @@ u0808816@utah.edu
 
 Maxwell Archibald 
 u1388325@utah.edu
+
+Lauren Whelton
+978-852-6721
+lauren.whelton@utah.edu
