@@ -9,3 +9,5 @@ Madeline Buhman
 385-309-9508
 u0808816@utah.edu
 
+Maxwell Archibald 
+u1388325@utah.edu
