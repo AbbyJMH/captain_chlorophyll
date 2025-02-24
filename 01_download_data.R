@@ -1,3 +1,5 @@
+library(tidyverse)
+
 url <- "https://sdsc.osn.xsede.org/bio230014-bucket01/challenges/targets/project_id=neon4cast/duration=P1D/aquatics-targets.csv.gz"
 aquatics_targets <- read_csv(url, show_col_types = FALSE) #download historical data from NEON for CRAM and BARC sites
 aquatics_targets |>     #graph the two sites through time
