@@ -1,5 +1,9 @@
 ---
-title: "time_series_plots"
+title: "Visualizations of Raw Time Series Data"
 output: html_document
 ---
+
+```{r}
+source("01_download_data.R")
+```
 
