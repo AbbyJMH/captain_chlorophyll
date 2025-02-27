@@ -7,3 +7,11 @@ output: html_document
 source("01_download_data.R")
 ```
 
+
+```{r}
+aquatics_targets |>
+    ggplot(aes(x = datetime, y = observation)) +
+      geom_point(size = .5) +
+      facet_grid(variable~site_id, scales = "free_y") +
+      theme_bw()
+```
