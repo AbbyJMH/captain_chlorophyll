@@ -3,7 +3,7 @@ title: "Visualizations of Raw Time Series Data"
 output: html_document
 ---
 
-```{r}
+```{r echo = T, results = 'hide'}
 source("01_download_data.R")
 ```
 
@@ -42,9 +42,6 @@ weather_forecast |>
       theme_bw()
 ```
 
-```{r}
-source("02_download_wq_data.R")  # Load waq_filtered dataset
-```
 
 ```{r}
 # Plotting pH values from 0-14
