@@ -15,3 +15,29 @@ aquatics_targets |>
       facet_grid(variable~site_id, scales = "free_y") +
       theme_bw()
 ```
+
+
+```{r}
+weather_graph_labels <- c(`BARC` = "BARC",
+                          `precipitation_flux` = "precipitation_flux",
+                          `surface_downwelling_longwave_flux_in_air` = "longwave_flux",
+                          `surface_downwelling_shortwave_flux_in_air` = "shortwave_flux")
+historical_weather |>
+    ggplot(aes(x = datetime, y = daily_mean)) +
+      geom_point(size = .5) +
+      facet_grid(variable~site_id,
+                 scales = "free_y",
+                 labeller = as_labeller(weather_graph_labels)) +
+      theme_bw()
+```
+
+
+```{r}
+weather_forecast |>
+    ggplot(aes(x = datetime, y = daily_mean)) +
+      geom_point(size = .5) +
+      facet_grid(variable~site_id,
+                 scales = "free_y",
+                 labeller = as_labeller(weather_graph_labels)) +
+      theme_bw()
+```
