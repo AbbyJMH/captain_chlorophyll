@@ -13,7 +13,6 @@ aquatics_targets <- aquatics_targets |>
 
 
 
-
 # Define which weather variables we are interested in
 weather_variables <- c("surface_downwelling_longwave_flux_in_air",
                       "surface_downwelling_shortwave_flux_in_air",
@@ -48,3 +47,26 @@ weather_forecast <- weather_forecast |>
                       group_by(datetime, site_id, variable) |> 
                       summarise(daily_mean = mean(prediction)) |>
                       ungroup()
+
+library(neonUtilities) # need this so you can reference NEON data products
+library(tidyverse)
+
+# Loading the data from NEON
+our_site <- "BARC"  # Site of interest
+data_product_id <- "DP1.20288.001"  # NEON Water Quality Data
+water_quality_data <- loadByProduct(dpID = data_product_id, 
+                                    site = our_site, 
+                                    check.size = FALSE)  # Set FALSE to skip size confirmation
+
+# Specifically looking at instantaneous measurements
+waq_data <- water_quality_data$waq_instantaneous
+
+# Filtering for just pH and turbidity
+waq_filtered <- waq_data |> 
+                 filter(siteID == our_site) |> 
+                 select(siteID, startDateTime, pH, turbidity) |> 
+                 mutate(date = as.Date(startDateTime)) |> 
+                 group_by(date, siteID) |> 
+                 summarise(daily_pH = mean(pH, na.rm = TRUE),
+                           daily_turbidity = mean(turbidity, na.rm = TRUE)) |> 
+                 ungroup()
