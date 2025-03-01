@@ -1,5 +1,14 @@
 # captain_chlorophyll
 
+Required packages:
+
+```
+install.packages(c("tidyverse", "neonUtilities"))
+remotes::install_github("eco4cast/neon4cast")
+```
+
+
+
 Team member contact info:
 
 Abby Hardin-Kohli 

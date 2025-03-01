@@ -1,4 +1,5 @@
 library(tidyverse)
+library(neonUtilities) # need this so you can reference NEON data products
 
 our_site <- "BARC"
 
@@ -48,8 +49,6 @@ weather_forecast <- weather_forecast |>
                       summarise(daily_mean = mean(prediction)) |>
                       ungroup()
 
-library(neonUtilities) # need this so you can reference NEON data products
-library(tidyverse)
 
 # Loading the data from NEON
 our_site <- "BARC"  # Site of interest
