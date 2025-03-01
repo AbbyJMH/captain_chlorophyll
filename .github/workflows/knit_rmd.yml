@@ -18,7 +18,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        Rscript -e 'install.packages("rmarkdown", "tidyverse", "neonUtilities", "remotes")'
+        Rscript -e 'install.packages(c("rmarkdown", "tidyverse", "neonUtilities", "remotes"))'
         Rscript -e 'remotes::install_github("eco4cast/neon4cast")'
 
     - name: Knit R Markdown
