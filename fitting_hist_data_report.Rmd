@@ -1,0 +1,93 @@
+---
+title: "State Space Models"
+date: "2025-03-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Let $X_t$ be the **true** concentration of chlorophyll-a on day $t$ and $Y_t$ be the **measured** value on day $t$.
+
+These are all our covariates:
+
+  - $Z_{DO, t}$ = Daily mean dissolved oxygen on day $t$
+  - $Z_{pH, t}$ = Daily mean pH
+  - $Z_{\text{turb}, t}$ = Daily mean turbidity
+  - $Z_{\text{temp}, t}$ = Daily mean water temperature
+  - $Z_{lr, t}$ = Daily mean longwave radiation
+  - $Z_{sr, t}$ = Daily mean shortwave radiation
+  - $Z_{prec, t}$ = Daily total precipitation flux
+
+# Null Model(s)
+
+## Random Walk Model
+
+Data model:
+$$ Y_t \sim N(X_t, \tau_\text{obs}) $$
+
+Process model:
+$$ X_{t+1} \sim N(X_t, \tau_\text{add}) $$
+
+Priors:
+$$ X_1 \sim N(X_{ic}, \tau_{ic}) $$
+$$ \tau_\text{obs} \sim \text{Gamma}(a_\text{obs}, r_\text{obs}) $$
+$$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
+
+
+## Previous Year's Chorophyll-a Model
+
+
+Data model:
+$$ Y_t \sim N(X_t, \tau_\text{obs}) $$
+
+Process model:
+$$ X_{t} \sim N(X_{t-365}, \tau_\text{add}) $$
+
+Priors:
+$$ X_1 \sim N(X_{ic}, \tau_{ic}) $$
+$$ \tau_\text{obs} \sim \text{Gamma}(a_\text{obs}, r_\text{obs}) $$
+$$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
+
+
+# Internal Factors Model
+
+
+Data model:
+$$ Y_t \sim N(X_t, \tau_\text{obs}) $$
+
+Process model:
+$$ X_{t+1} \sim N(X_t + \beta_0 + \beta_{DO} Z_{DO, t} + \beta_{pH}Z_{pH, t} + \beta_{\text{turb}}Z_{\text{turb}, t} + \beta_X X_t, \tau_\text{add}) $$
+
+Priors:
+$$ X_1 \sim N(X_{ic}, \tau_{ic}) $$
+$$ \tau_\text{obs} \sim \text{Gamma}(a_\text{obs}, r_\text{obs}) $$
+$$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
+
+# External Factors Model
+
+Data model:
+$$ Y_t \sim N(X_t, \tau_\text{obs}) $$
+
+Process model:
+$$ X_{t+1} \sim N(\beta_0 + \beta_{\text{temp}} Z_{\text{temp}, t} + \beta_{lr}Z_{lr, t} + \beta_{sr}Z_{sr, t} + \beta_{\text{prec}} Z_{\text{prec}, t}, \tau_\text{add}) $$
+
+Priors:
+$$ X_1 \sim N(X_{ic}, \tau_{ic}) $$
+$$ \tau_\text{obs} \sim \text{Gamma}(a_\text{obs}, r_\text{obs}) $$
+$$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
+
+# Combined Factors Model
+
+Data model:
+$$ Y_t \sim N(X_t, \tau_\text{obs}) $$
+
+Process model:
+$$ X_{t+1} \sim N(X_t + \beta_0 + \beta_{\text{temp}} Z_{\text{temp}, t} + \beta_{lr}Z_{lr, t} + \beta_{sr}Z_{sr, t} + \beta_{\text{prec}} Z_{\text{prec}, t} + \beta_X X_t, \tau_\text{add}) $$
+
+Priors:
+$$ X_1 \sim N(X_{ic}, \tau_{ic}) $$
+$$ \tau_\text{obs} \sim \text{Gamma}(a_\text{obs}, r_\text{obs}) $$
+$$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
+
