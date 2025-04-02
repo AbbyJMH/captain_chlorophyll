@@ -1,0 +1,27 @@
+---
+title: "Looking for linear relationships"
+author: "Abby Hardin-Kohli"
+date: "2025-03-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- aquatics_targets |>
+        group_by(datetime) |>
+        ggplot()
+        
+
+chla <- aquatics_targets |>
+    filter(variable == "chla") |>
+    pull(observation)
+  
+water_temp <- aquatics_targets |>
+    filter(variable == "temperature") |>
+    pull(observation)
+
+
+```
