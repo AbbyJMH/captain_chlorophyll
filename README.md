@@ -5,6 +5,7 @@ Required packages:
 ```
 install.packages(c("tidyverse", "neonUtilities"))
 remotes::install_github("eco4cast/neon4cast")
+install.packages(c("coda", "ecoforecastR", "rjags"))
 ```
 
 
