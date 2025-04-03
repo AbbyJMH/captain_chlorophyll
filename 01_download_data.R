@@ -21,16 +21,34 @@ weather_variables <- c("surface_downwelling_longwave_flux_in_air",
 
 # Download historical weather data
 historical_weather <- neon4cast::noaa_stage3()
-historical_weather <- historical_weather |> 
-                        filter(site_id == our_site,
-                                      variable %in% weather_variables) |>
-                        collect()
+
+# Find daily average short and longwave flux
+historical_weather_rad <- historical_weather |> 
+                            filter(site_id == our_site,
+                                      variable %in% weather_variables[1:2]) |>
+                            collect()
 # Aggregate to daily mean
-historical_weather <- historical_weather |>
-                        mutate(datetime = as.Date(datetime)) |>
-                          group_by(datetime, site_id, variable) |> 
-                          summarise(daily_mean = mean(prediction)) |>
-                          ungroup()
+historical_weather_rad <- historical_weather_rad |>
+                            mutate(datetime = as.Date(datetime)) |>
+                              group_by(datetime, site_id, variable) |> 
+                              summarise(daily_val = mean(prediction)) |>
+                              ungroup()
+
+# Find daily sum of precipitation flux
+historical_weather_precip <- historical_weather |> 
+                              filter(site_id == our_site,
+                                     variable %in% weather_variables[3]) |>
+                              collect()
+
+# Find to daily sum
+historical_weather_precip <- historical_weather_precip |>
+  mutate(datetime = as.Date(datetime)) |>
+  group_by(datetime, site_id, variable) |> 
+  summarise(daily_val = sum(prediction)) |>
+  ungroup()
+
+# Combine into one data from
+historical_weather <- rbind(historical_weather_rad, historical_weather_precip)
 
 
                           

@@ -15,7 +15,7 @@ aquatics_targets_clean <- aquatics_targets %>%
 historical_weather_clean <- historical_weather %>%
   pivot_wider(
     names_from = variable,  # Use the variable.y column to create new columns
-    values_from = daily_mean  # Use the daily.mean column for the values
+    values_from = daily_val  # Use the daily_val column for the values
   )
 
 # Step 3: Merge aquatics_targets_clean, waq_filtered, and historical_weather_clean
