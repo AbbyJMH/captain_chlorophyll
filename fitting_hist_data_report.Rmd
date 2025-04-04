@@ -162,4 +162,69 @@ if(diff(time.rng) < 100){
 ecoforecastR::ciEnvelope(cleaned_data$datetime,ci[1,],ci[3,],col=ecoforecastR::col.alpha("lightBlue",0.75))
 points(cleaned_data$datetime, cleaned_data$chla,pch="+",cex=0.5)
 ```
+```{r}
+## confidence interval
+time.rng = c(1, nrow(cleaned_data))  ## you can adjust this line to zoom in and out on specific time intervals
 
+# Get posterior predictions from the external factors model
+out_ext <- as.matrix(ef.out.external$predict)
+ci_ext <- apply(out_ext, 2, quantile, c(0.025, 0.5, 0.975))
+
+# Plot the time series with confidence intervals
+plot(cleaned_data$datetime, ci_ext[2,], type='n', ylim=range(cleaned_data$chla, na.rm=TRUE),
+     #log='y',
+     xlim=cleaned_data$datetime[time.rng],
+     xlab = "Time",
+     ylab = "Chlorophyll-a",
+     main = "External Factors Model")
+
+# Adjust x-axis label to be monthly if zoomed
+if(diff(time.rng) < 100){ 
+  axis.Date(1, at=seq(cleaned_data$datetime[time.rng[1]], cleaned_data$datetime[time.rng[2]], by='month'), format = "%Y-%m")
+}
+
+# Add the confidence envelope
+ecoforecastR::ciEnvelope(cleaned_data$datetime, ci_ext[1,], ci_ext[3,], col=ecoforecastR::col.alpha("lightBlue", 0.75))
+
+# Plot the original data points
+points(cleaned_data$datetime, cleaned_data$chla, pch="+", cex=0.5)
+```
+
+```{r}
+# Discard burn-in
+params_external <- window(ef.out.external$params, start = 1000)
+
+# Plot and summarize
+plot(params_external)
+summary(params_external)
+cor(as.matrix(params_external))
+```
+
+```{r}
+## confidence interval
+time.rng = c(1, nrow(cleaned_data))  ## you can adjust this line to zoom in and out on specific time intervals
+
+# Get posterior predictions from the external factors model
+out_ext <- as.matrix(ef.out.external$predict)
+ci_ext <- apply(out_ext, 2, quantile, c(0.025, 0.5, 0.975))
+
+# Plot the time series with confidence intervals
+plot(cleaned_data$datetime, ci_ext[2,], type='n', ylim=range(cleaned_data$chla, na.rm=TRUE),
+     #log='y',
+     xlim=cleaned_data$datetime[time.rng],
+     xlab = "Time",
+     ylab = "Chlorophyll-a",
+     main = "External Factors Model")
+
+# Adjust x-axis label to be monthly if zoomed
+if(diff(time.rng) < 100){ 
+  axis.Date(1, at=seq(cleaned_data$datetime[time.rng[1]], cleaned_data$datetime[time.rng[2]], by='month'), format = "%Y-%m")
+}
+
+# Add the confidence envelope
+ecoforecastR::ciEnvelope(cleaned_data$datetime, ci_ext[1,], ci_ext[3,], col=ecoforecastR::col.alpha("lightBlue", 0.75))
+
+# Plot the original data points
+points(cleaned_data$datetime, cleaned_data$chla, pch="+", cex=0.5)
+```
+pairs(as.matrix(params_external))
