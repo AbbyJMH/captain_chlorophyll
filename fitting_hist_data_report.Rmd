@@ -88,6 +88,78 @@ $$ X_1 \sim N(X_{ic}, \tau_{ic}) $$
 $$ \tau_\text{obs} \sim \text{Gamma}(a_\text{obs}, r_\text{obs}) $$
 $$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
 
+## Fitting the Model
+
+```{r}
+# Set up data object (with NA handling built-in)
+data_ext <- list(
+  y = cleaned_data$chla,
+  n = length(cleaned_data$chla),
+  temp = cleaned_data$temperature,
+  longrad = cleaned_data$surface_downwelling_longwave_flux_in_air,
+  shortrad = cleaned_data$surface_downwelling_shortwave_flux_in_air,
+  precip = cleaned_data$precipitation_flux,
+  x_ic = 1, tau_ic = 100,
+  a_obs = 1, r_obs = 1,
+  a_add = 1, r_add = 1
+)
+
+# Fit the model — this version has no X term
+model_ext <- "~ 1 + temp + longrad + shortrad + precip"
+
+ef.out.external <- ecoforecastR::fit_dlm(
+  model = list(obs = "y", fixed = model_ext),
+  data = data_ext
+)
+
+# Optional: save results
+# save(ef.out.external, file = "external_factors.RData")
+```
+
+## Diagnostics
+
+
+```{r}
+# Discard burn-in
+params_external <- window(ef.out.external$params, start = 1000)
+
+# Plot and summarize
+plot(params_external)
+summary(params_external)
+cor(as.matrix(params_external))
+pairs(as.matrix(params))
+```
+
+# Time Series Plot
+
+```{r}
+## confidence interval
+time.rng = c(1, nrow(cleaned_data))  ## you can adjust this line to zoom in and out on specific time intervals
+
+# Get posterior predictions from the external factors model
+out_ext <- as.matrix(ef.out.external$predict)
+ci_ext <- apply(out_ext, 2, quantile, c(0.025, 0.5, 0.975))
+
+# Plot the time series with confidence intervals
+plot(cleaned_data$datetime, ci_ext[2,], type='n', ylim=range(cleaned_data$chla, na.rm=TRUE),
+     #log='y',
+     xlim=cleaned_data$datetime[time.rng],
+     xlab = "Time",
+     ylab = "Chlorophyll-a",
+     main = "External Factors Model")
+
+# Adjust x-axis label to be monthly if zoomed
+if(diff(time.rng) < 100){ 
+  axis.Date(1, at=seq(cleaned_data$datetime[time.rng[1]], cleaned_data$datetime[time.rng[2]], by='month'), format = "%Y-%m")
+}
+
+# Add the confidence envelope
+ecoforecastR::ciEnvelope(cleaned_data$datetime, ci_ext[1,], ci_ext[3,], col=ecoforecastR::col.alpha("lightBlue", 0.75))
+
+# Plot the original data points
+points(cleaned_data$datetime, cleaned_data$chla, pch="+", cex=0.5)
+```
+
 # Combined Factors Model
 
 Data model:
@@ -164,6 +236,7 @@ points(cleaned_data$datetime, cleaned_data$chla,pch="+",cex=0.5)
 cor(as.matrix(params))
 ```
 
+<<<<<<< HEAD
 ### Internal Model: dissolved xygen, pH, turbidity
 
 ```{r}
@@ -202,3 +275,6 @@ points(cleaned_data$datetime, cleaned_data$chla,pch="+",cex=0.5)
 cor(as.matrix(params_internal))
 
 ```
+=======
+
+>>>>>>> a15441030c85b76c6348a8631d7f47873cb73539
