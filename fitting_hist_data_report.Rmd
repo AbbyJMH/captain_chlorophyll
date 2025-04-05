@@ -161,5 +161,44 @@ if(diff(time.rng) < 100){
 }
 ecoforecastR::ciEnvelope(cleaned_data$datetime,ci[1,],ci[3,],col=ecoforecastR::col.alpha("lightBlue",0.75))
 points(cleaned_data$datetime, cleaned_data$chla,pch="+",cex=0.5)
+cor(as.matrix(params))
 ```
 
+### Internal Model: dissolved xygen, pH, turbidity
+
+```{r}
+internal_model <- ecoforecastR::fit_dlm(model = list(obs = "chla", fixed = "1 + X + oxygen + daily_pH + daily_turbidity"), cleaned_data)
+names(internal.model)
+
+```
+```{r}
+## parameter diagnostics
+params_internal <- window(internal_model$params,start=1000) ## remove burn-in
+plot(params_internal)
+
+cor(as.matrix(params_internal))
+pairs(as.matrix(params_internal))
+summary(params_internal)
+```
+
+```{r}
+time.rng = c(1,nrow(cleaned_data))       ## you can adjust this line to zoom in and out on specific time intervals
+
+out <- as.matrix(internal_model$predict)
+ci <- apply(out,2,quantile,c(0.025,0.5,0.975))
+
+plot(cleaned_data$datetime,ci[2,],type='n',ylim=range(cleaned_data$chla,na.rm=TRUE),
+     #log='y',
+     xlim=cleaned_data$datetime[time.rng],
+     xlab = "Time",
+     ylab = "Chlorophyll-a",
+     main = "Internal Factors Model")
+## adjust x-axis label to be monthly if zoomed
+if(diff(time.rng) < 100){ 
+  axis.Date(1, at=seq(cleaned_data$datetime[time.rng[1]],cleaned_data$datetime[time.rng[2]],by='month'), format = "%Y-%m")
+}
+ecoforecastR::ciEnvelope(cleaned_data$datetime,ci[1,],ci[3,],col=ecoforecastR::col.alpha("lightBlue",0.75))
+points(cleaned_data$datetime, cleaned_data$chla,pch="+",cex=0.5)
+cor(as.matrix(params_internal))
+
+```
