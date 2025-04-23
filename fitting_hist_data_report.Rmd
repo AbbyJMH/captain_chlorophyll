@@ -15,7 +15,7 @@ These are all our covariates:
   - $Z_{DO, t}$ = Daily mean dissolved oxygen on day $t$
   - $Z_{pH, t}$ = Daily mean pH
   - $Z_{\text{turb}, t}$ = Daily mean turbidity
-  - $Z_{\text{temp}, t}$ = Daily mean water temperature
+  - $Z_{\text{temp}, t}$ = Daily mean air temperature
   - $Z_{lr, t}$ = Daily mean longwave radiation
   - $Z_{sr, t}$ = Daily mean shortwave radiation
   - $Z_{prec, t}$ = Daily total precipitation flux
@@ -240,7 +240,7 @@ $$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
 data_ext <- list(
   y = cleaned_data$chla,
   n = length(cleaned_data$chla),
-  temp = cleaned_data$temperature,
+  temp = cleaned_data$air_temperature,
   longrad = cleaned_data$surface_downwelling_longwave_flux_in_air,
   shortrad = cleaned_data$surface_downwelling_shortwave_flux_in_air,
   precip = cleaned_data$precipitation_flux,
@@ -325,7 +325,7 @@ $$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
 # set up data object for ecoforecastR
 data <- list(y = cleaned_data$chla,
              n = length(cleaned_data$chla),      ## data
-             temp = cleaned_data$temperature,
+             temp = cleaned_data$air_temperature,
              longrad = cleaned_data$surface_downwelling_longwave_flux_in_air,
              shortrad = cleaned_data$surface_downwelling_shortwave_flux_in_air,
              precip = cleaned_data$precipitation_flux,
