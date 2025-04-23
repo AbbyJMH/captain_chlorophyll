@@ -17,7 +17,8 @@ aquatics_targets <- aquatics_targets |>
 # Define which weather variables we are interested in
 weather_variables <- c("surface_downwelling_longwave_flux_in_air",
                       "surface_downwelling_shortwave_flux_in_air",
-                      "precipitation_flux")
+                      "precipitation_flux",
+                      "air_temperature")
 
 # Download historical weather data
 historical_weather <- neon4cast::noaa_stage3()
@@ -47,26 +48,60 @@ historical_weather_precip <- historical_weather_precip |>
   summarise(daily_val = sum(prediction)) |>
   ungroup()
 
+# Find daily mean of air temperature
+historical_weather_temp <- historical_weather |> 
+  filter(site_id == our_site,
+         variable %in% weather_variables[4]) |>
+  collect()
+
+# Aggregate to daily mean
+historical_weather_temp <- historical_weather_temp |>
+  mutate(datetime = as.Date(datetime)) |>
+  group_by(datetime, site_id, variable) |> 
+  summarise(daily_val = mean(prediction)) |>
+  ungroup()
+
+
+
 # Combine into one data from
-historical_weather <- rbind(historical_weather_rad, historical_weather_precip)
+historical_weather <- rbind(historical_weather_rad, historical_weather_precip, historical_weather_temp)
 
 
                           
 # Download forecasted weather data
 yest_date <- Sys.Date() - lubridate::days(1) # Need to use yesterdays forecast (today's not available yet)
 weather_forecast <- neon4cast::noaa_stage2(start_date = yest_date)
-weather_forecast <- weather_forecast |> 
+
+#gather radiation and air temperature as daily mean
+weather_forecast_radandtemp <- weather_forecast |> 
                       filter(datetime >= Sys.Date(),
                              site_id == our_site,
-                             variable %in% weather_variables) |>
+                             variable %in% weather_variables[c(1,2,4)]) |>
                       collect()
-# Aggregate to daily mean
-weather_forecast <- weather_forecast |>
-                      mutate(datetime = as.Date(datetime)) |>
-                      group_by(datetime, site_id, variable) |> 
-                      summarise(daily_mean = mean(prediction)) |>
-                      ungroup()
 
+# Aggregate to daily mean
+weather_forecast_radandtemp <- weather_forecast_radandtemp |>
+                        mutate(datetime = as.Date(datetime)) |>
+                        group_by(datetime, site_id, variable) |> 
+                        summarise(daily_val = mean(prediction)) |>
+                        ungroup()
+
+#get precipitation as a daily sum
+weather_forecast_precip <- weather_forecast |> 
+  filter(datetime >= Sys.Date(),
+         site_id == our_site,
+         variable %in% weather_variables[3]) |>
+  collect()
+
+#Compute sum
+weather_forecast_precip <- weather_forecast_precip |>
+  mutate(datetime = as.Date(datetime)) |>
+  group_by(datetime, site_id, variable) |> 
+  summarise(daily_val = sum(prediction)) |>
+  ungroup()
+
+#Combine data
+weather_forecast <- rbind(weather_forecast_radandtemp, weather_forecast_precip)
 
 # Loading the data from NEON
 our_site <- "BARC"  # Site of interest
