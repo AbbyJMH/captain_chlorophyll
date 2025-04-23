@@ -30,3 +30,12 @@ for(t in 1:30){
   N[,t] <- rnorm(Nmc,mu,tau_add)                         ## predict next step
   Nprev <- N[,t]                                  ## update IC
 }
+## graph the ensemble
+time = 1:30
+
+forecast_chla <- for(t in 1:30){
+  mu = Nprev + Betaintercept + Betatemp*temperature[t] + Betaprecip*precipitation[t] + BetaX*Nprev   ## calculate mean
+  N[,t] <- rnorm(Nmc,mu,tau_add)                         ## predict next step
+  Nprev <- N[,t] 
+}
+plot.run(time, forcast_chla, col = 'green', lwd = 3)
