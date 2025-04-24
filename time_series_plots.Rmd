@@ -22,7 +22,8 @@ aquatics_targets |>
 weather_graph_labels <- c(`BARC` = "BARC",
                           `precipitation_flux` = "precipitation_flux",
                           `surface_downwelling_longwave_flux_in_air` = "longwave_flux",
-                          `surface_downwelling_shortwave_flux_in_air` = "shortwave_flux")
+                          `surface_downwelling_shortwave_flux_in_air` = "shortwave_flux",
+                           `air_temperature` = "air_temperature")
 historical_weather |>
     ggplot(aes(x = datetime, y = daily_mean)) +
       geom_point(size = .5) +

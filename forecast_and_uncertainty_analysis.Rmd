@@ -1,0 +1,102 @@
+---
+title: "Ensemble Forecast and Uncertainty Analysis"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+Note, you will need to run 03_fit_combined_model.R before knitting this so that combined_factors.RData exists. Don't try to commit combined_factors.RData to github! It is too large
+
+```{r}
+source("01_download_data.R")
+source("02_combine_data.R")
+
+load("combined_factors.RData")
+```
+
+# Run forecast
+
+```{r}
+params <- window(ef.out.combined$params,start=1000) ## remove burn-in
+
+#sample rows from mcmc chain to run foreward in time
+Nmc = 1000         ## set number of Monte Carlo draws
+prow = sample.int(nrow(as.matrix(params)), Nmc, replace = TRUE)
+
+#initialize variables
+N <- matrix(NA,Nmc,30)  ## storage
+predict_matrix <- as.matrix(ef.out.combined$predict)
+Nprev <- predict_matrix[prow, ncol(predict_matrix)]## initialize
+
+#set parameters
+param_matrix <- as.matrix(params)
+Betatemp <- param_matrix[prow, "betatemp"]
+Betaprecip <- param_matrix[prow, "betaprecip"]
+BetaX <- param_matrix[prow, "betaX"]
+Betaintercept <- param_matrix[prow, "betaIntercept"]
+tau_add <- param_matrix[prow, "tau_add"]
+
+#find driver values
+weather_forecast_cleaned <- weather_forecast %>%
+  pivot_wider(
+    names_from = variable,  # Use the variable.y column to create new columns
+    values_from = daily_val  # Use the daily_val column for the values
+  )
+precipitation <- weather_forecast_cleaned$precipitation_flux[-1] #remove 1st so dates line up
+temperature <- weather_forecast_cleaned$air_temperature[-1] #remove 1st so dates line up
+
+#### OR if using water temp
+dates <-  as.Date(cleaned_data$datetime)
+forecast_dates <- seq.Date(from = tail(dates, 1) + 1, by = "day", length.out = 30)
+dates <- c(dates, forecast_dates)
+
+forecast_dates_minus1 <- as_datetime(forecast_dates) - years(1)
+temperature <- cleaned_data$temperature[which(cleaned_data$datetime %in% forecast_dates_minus1)]
+
+
+#Run ensemble
+for(t in 1:30){
+  mu = Nprev + Betaintercept + Betatemp*temperature[t] + Betaprecip*precipitation[t] + BetaX*Nprev   ## calculate mean
+  N[,t] <- rnorm(Nmc,mu,tau_add)                         ## predict next step
+  Nprev <- N[,t]                                  ## update IC
+}
+
+```
+
+
+# Initial Plot
+
+```{r}
+time.rng = c(2500,nrow(cleaned_data)+30)       ## you can adjust this line to zoom in and out on specific time intervals
+
+out <- as.matrix(ef.out.combined$predict)
+ci <- apply(out,2,quantile,c(0.025,0.5,0.975))
+
+# Time interval set up
+dates <-  as.Date(cleaned_data$datetime)
+dates <- c(dates, seq.Date(from = tail(dates, 1) + 1, by = "day", length.out = 30))
+
+plot(dates, 1:length(dates) ,type='n',ylim=range(cleaned_data$chla,na.rm=TRUE),
+     #log='y',
+     xlim=dates[time.rng],
+     xlab = "Time",
+     ylab = "Chlorophyll-a",
+     main = "Combined Factors Model")
+## adjust x-axis label to be monthly if zoomed
+#if(diff(time.rng) < 100){ 
+#  axis.Date(1, at=seq(cleaned_data$datetime[time.rng[1]],cleaned_data$datetime[time.rng[2]],by='month'), format = "%Y-%m")
+#}
+ecoforecastR::ciEnvelope(as.Date(cleaned_data$datetime),ci[1,],ci[3,],col=ecoforecastR::col.alpha("lightBlue",0.75))
+points(as.Date(cleaned_data$datetime), cleaned_data$chla,pch="+",cex=0.5)
+
+# adding the forcast on
+N.ci = apply(N,2,quantile,c(0.025,0.5,0.975))
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ci[1,],N.ci[3,],col= "green")#col.alpha(N.cols[1],trans))
+lines(tail(dates, 30),N.ci[2,],lwd=0.5)
+
+```

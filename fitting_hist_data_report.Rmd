@@ -321,35 +321,25 @@ $$ \tau_\text{add} \sim \text{Gamma}(a_\text{add}, r_\text{add}) $$
 
 ## Fitting the Model
 
-```{r}
-# set up data object for ecoforecastR
-data <- list(y = cleaned_data$chla,
-             n = length(cleaned_data$chla),      ## data
-             temp = cleaned_data$air_temperature,
-             longrad = cleaned_data$surface_downwelling_longwave_flux_in_air,
-             shortrad = cleaned_data$surface_downwelling_shortwave_flux_in_air,
-             precip = cleaned_data$precipitation_flux,
-             x_ic=1,tau_ic=100,      ## initial condition prior
-             a_obs=1,r_obs=1,           ## obs error prior
-             a_add=1,r_add=1            ## process error prior
-)
-
-## fit the model
-model2 <- "~ 1 + X + temp + precip"
-ef.out.combined <- ecoforecastR::fit_dlm(model=list(obs="y",fixed=model2),data)
-
-#save(ef.out.combined, file = "combined_factors.RData")
-```
+This model can be re-fit by sourcing the script "03_fit_combined_model.R"
 
 ## Parameter Diagnostics
 
+```{r}
+#TODO: add gelman plots 
+```
+
 ```{r, fig.height=10, fig.width=10}
-#load("combined_factors.RData")
+load("combined_factors.RData")
 
 ## parameter diagnostics
 params <- window(ef.out.combined$params,start=1000) ## remove burn-in
 plot(params)
 ```
+
+
+
+
 
 ```{r}
 summary(params)
