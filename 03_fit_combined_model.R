@@ -1,3 +1,5 @@
+load("cleaned_data.RData")
+
 # set up data object for ecoforecastR
 data <- list(y = cleaned_data$chla,
              n = length(cleaned_data$chla),      ## data

@@ -13,24 +13,25 @@ knitr::opts_chunk$set(echo = TRUE)
 Note, you will need to run 03_fit_combined_model.R before knitting this so that combined_factors.RData exists. Don't try to commit combined_factors.RData to github! It is too large
 
 ```{r}
-source("01_download_data.R")
-source("02_combine_data.R")
+library(tidyverse)
+library(ecoforecastR)
+library(rjags)
 
-load("combined_factors.RData")
+load("cleaned_data.RData")
+load("combined_factors_noburnin.RData") #loads in params and predict
+load("weather_forecast.RData") 
 ```
 
 # Run forecast
 
 ```{r}
-params <- window(ef.out.combined$params,start=1000) ## remove burn-in
-
 #sample rows from mcmc chain to run foreward in time
 Nmc = 1000         ## set number of Monte Carlo draws
 prow = sample.int(nrow(as.matrix(params)), Nmc, replace = TRUE)
 
 #initialize variables
 N <- matrix(NA,Nmc,30)  ## storage
-predict_matrix <- as.matrix(ef.out.combined$predict)
+predict_matrix <- as.matrix(predict)
 Nprev <- predict_matrix[prow, ncol(predict_matrix)]## initialize
 
 #set parameters
@@ -74,7 +75,7 @@ for(t in 1:30){
 ```{r}
 time.rng = c(2500,nrow(cleaned_data)+30)       ## you can adjust this line to zoom in and out on specific time intervals
 
-out <- as.matrix(ef.out.combined$predict)
+out <- predict_matrix
 ci <- apply(out,2,quantile,c(0.025,0.5,0.975))
 
 # Time interval set up
