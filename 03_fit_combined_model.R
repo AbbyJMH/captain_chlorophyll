@@ -1,4 +1,6 @@
 load("cleaned_data.RData")
+library(rjags)
+library(ecoforecastR)
 
 # set up data object for ecoforecastR
 data <- list(y = cleaned_data$chla,
