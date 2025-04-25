@@ -7,3 +7,4 @@ combined_factors_noburnin.RData
 combined_factors.RData
 weather_forecast.RData
 .DS_Store
+*.RData
