@@ -176,7 +176,7 @@ ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.ci[1,],N.ic.p.ci[3,],col= "red")
 ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.ci[1,],N.ic.ci[3,],col= "green")
 
 
-lines(tail(dates, 30),N.ci[2,],lwd=0.5)
+lines(tail(dates, 30),N.ic[2,],lwd=0.5)
 
 
 
