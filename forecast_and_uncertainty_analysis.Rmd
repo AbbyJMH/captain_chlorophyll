@@ -142,7 +142,7 @@ forecastN <- function(IC,
                       BetaX,
                       temperature,
                       precipitation,
-                      tau_add_inv,
+                      sd,
                       NT = 30){
   N <- matrix(NA,Nmc,NT)  ## storage
   Nprev <- IC           ## initialize
@@ -150,7 +150,7 @@ forecastN <- function(IC,
   for(tt in 1:NT){
     ## calculate mean
     mu = Nprev + Betaintercept + Betatemp*temperature[tt] + Betaprecip*precipitation[tt] + BetaX*Nprev   
-    N[,tt] <- rnorm(Nmc,mu,tau_add_inv)                         ## predict next step
+    N[,tt] <- rnorm(Nmc,mu, sd)                         ## predict next step
     Nprev <- N[,tt]                                  ## update IC
   }
   return(N)
@@ -196,7 +196,6 @@ Betatemp.sample <- param_matrix[prow, "betatemp"]
 Betaprecip.sample <- param_matrix[prow, "betaprecip"]
 BetaX.sample <- param_matrix[prow, "betaX"]
 Betaintercept.sample <- param_matrix[prow, "betaIntercept"]
-tau_add.sample <- param_matrix[prow, "tau_add"]
 
 
 N.ic.p <- forecastN(IC,
@@ -212,10 +211,54 @@ N.ic.p <- forecastN(IC,
 
 ## Driver Uncertainty
 
+```{r}
+## Sample driver columns with replacement
+
+# Turn temperature forecast ensemble tibble into a matrix
+temp_ens_matrix <- temp_ensemble_df %>%
+  select(starts_with("yr_")) %>%
+  as.matrix()
+temp_cols <- sample.int(ncol(temp_ens_matrix),Nmc,replace=TRUE) # sample
+
+# Turn precipitation forecast ensemble tibble into a matrix
+precip_ens_matrix <- precip_ens_forecast %>%
+  select(starts_with("ens_") & !ends_with("mean")) %>%
+  as.matrix()
+precip_cols <- sample.int(ncol(precip_ens_matrix),Nmc,replace=TRUE)
+
+
+
+N.ic.p.d <- forecastN(IC,
+                Nmc,
+                Betaintercept.sample,
+                Betatemp.sample,
+                Betaprecip.sample,
+                BetaX.sample,
+                temp_ens_matrix[ , temp_cols],
+                precip_ens_matrix[ , precip_cols],
+                0)
+```
+
 
 
 
 ## Process Uncertainty
+
+
+```{r}
+tau_add.sample <- param_matrix[prow, "tau_add"]
+sd.sample <- 1/sqrt(tau_add.sample)
+
+N.ic.p.d.pr <- forecastN(IC,
+                Nmc,
+                Betaintercept.sample,
+                Betatemp.sample,
+                Betaprecip.sample,
+                BetaX.sample,
+                temp_ens_matrix[ , temp_cols],
+                precip_ens_matrix[ , precip_cols],
+                sd.sample)
+```
 
 # Plot
 
@@ -224,8 +267,8 @@ N.ic.p <- forecastN(IC,
 time.rng = c(2600,nrow(cleaned_data)+30)  
 
 ## You can adjust this line to adjust the y-axis zoom
-#y.rng <- range(cleaned_data$chla,na.rm=TRUE)
-y.rng <- c(0,5)
+y.rng <- range(cleaned_data$chla,na.rm=TRUE)
+#y.rng <- c(0,5)
 
 
 ## Plot historical fit data
@@ -259,16 +302,16 @@ points(as.Date(cleaned_data$datetime), cleaned_data$chla,pch="+",cex=0.5)
 ## Add forecast and uncertainties
 N.ic.ci = apply(N.ic,2,quantile,c(0.025,0.5,0.975))
 N.ic.p.ci = apply(N.ic.p,2,quantile,c(0.025,0.5,0.975))
+N.ic.p.d.ci = apply(N.ic.p.d,2,quantile,c(0.025,0.5,0.975))
+N.ic.p.d.pr.ci = apply(N.ic.p.d.pr,2,quantile,c(0.025,0.5,0.975))
 
-ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.ci[1,],N.ic.p.ci[3,],col= "red")
-ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.ci[1,],N.ic.ci[3,],col= "green")
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.pr.ci[1,],N.ic.p.d.pr.ci[3,],col= "red")
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.ci[1,],N.ic.p.d.ci[3,],col= "green")
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.ci[1,],N.ic.p.ci[3,],col= "blue")
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.ci[1,],N.ic.ci[3,],col= "orange")
 
 
 lines(tail(dates, 30),N.ic.ci[2,],lwd=0.5)
 
-
-
-#N.I.ci = apply(N.I,2,quantile,c(0.025,0.5,0.975))
-#ecoforecastR::ciEnvelope(time2,N.I.ci[1,],N.I.ci[3,],col=col.alpha(N.cols[1],trans))
-#lines(time2,N.I.ci[2,],lwd=0.5)
+legend("topleft", legend = c("IC Uncertainty", "Parameter Uncertainty", "Driver Uncertainty", "Process Uncertainty"), fill =  c("orange", "blue", "green", "red"))
 ```
