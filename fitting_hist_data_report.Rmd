@@ -332,6 +332,8 @@ gelman.diag(ef.out.combined$params)
 BGR <- gelman.plot(ef.out.combined$params)
 ```
 
+Set burn in to 5000.
+
 ```{r, fig.height=10, fig.width=10}
 # Load in params with removed burnin
 load("combined_factors_noburnin.RData")
