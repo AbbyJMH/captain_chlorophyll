@@ -10,7 +10,7 @@ remotes::install_github("EcoForecast/ecoforecastR")
 ```
 
 In order to generate the reports, first run Main.R which will source the 4 numbered scripts.
-This will the required .RData objects. 
+This will create the required .RData objects. 
 Then, the RMD files can be re-knitted to generate the reports.
 
 
