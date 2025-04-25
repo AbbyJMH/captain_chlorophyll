@@ -307,10 +307,10 @@ N.ic.p.d.pr.ci = apply(N.ic.p.d.pr,2,quantile,c(0.025,0.5,0.975))
 
 N.cols <- c("orange", "blue", "green", "red")
 
-ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.pr.ci[1,],N.ic.p.d.pr.ci[3,],col= "red")
-ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.ci[1,],N.ic.p.d.ci[3,],col= "green")
-ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.ci[1,],N.ic.p.ci[3,],col= "blue")
-ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.ci[1,],N.ic.ci[3,],col= "orange")
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.pr.ci[1,],N.ic.p.d.pr.ci[3,],col= N.cols[4]) # Process
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.ci[1,],N.ic.p.d.ci[3,],col= N.cols[3]) # Driver
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.ci[1,],N.ic.p.ci[3,],col= N.cols[2]) # Paramater
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.ci[1,],N.ic.ci[3,],col= N.cols[1]) # Init Cond
 
 
 lines(tail(dates, 30),N.ic.ci[2,],lwd=0.5)
@@ -334,9 +334,9 @@ varMat   <- rbind(varI,varIP,varIPD,varIPDPR)
 ## in-sample stacked area plot
 V.pred.rel.in <- apply(varMat[-5,],2,function(x) {x/max(x)})
 plot(forecast_dates,V.pred.rel.in[1,],ylim=c(0,1),type='n',main="Relative Variance",ylab="Proportion of Variance",xlab="time")
-ciEnvelope(forecast_dates,rep(0,ncol(V.pred.rel.in)),V.pred.rel.in[1,],col=N.cols[4])
-ciEnvelope(forecast_dates,V.pred.rel.in[1,],V.pred.rel.in[2,],col=N.cols[3])
-ciEnvelope(forecast_dates,V.pred.rel.in[2,],V.pred.rel.in[3,],col=N.cols[2])
-ciEnvelope(forecast_dates,V.pred.rel.in[3,],V.pred.rel.in[4,],col=N.cols[1])
-legend("topleft",legend=c("Process","Driver","Parameter","InitCond"),col=N.cols,lty=1,lwd=5)
+ciEnvelope(forecast_dates,rep(0,ncol(V.pred.rel.in)),V.pred.rel.in[1,],col=N.cols[1])
+ciEnvelope(forecast_dates,V.pred.rel.in[1,],V.pred.rel.in[2,],col=N.cols[2])
+ciEnvelope(forecast_dates,V.pred.rel.in[2,],V.pred.rel.in[3,],col=N.cols[3])
+ciEnvelope(forecast_dates,V.pred.rel.in[3,],V.pred.rel.in[4,],col=N.cols[4])
+legend("topleft",legend=c("Process","Driver","Parameter","InitCond"),col=rev(N.cols),lty=1,lwd=5)
 ```
