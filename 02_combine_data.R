@@ -40,9 +40,50 @@ cleaned_data <- merged_data %>%
   )
 
 
+##########################################################################
+## Making sure all the dates are correct
+
+# Get the last date for which chla is available
+last_chla_day <- tail(as_date(aquatics_targets_clean$datetime), 1)
+
+if (last_chla_day == Sys.Date()-1) {
+  # If this is yesterday, will fit model up through yesterday and start forecast on today's date
+  
+  # If the weather data has included partial data for today, remove that row so don't fit model through today
+  cleaned_data <- cleaned_data %>%
+    filter(as_date(datetime) != Sys.Date())
+} else if (last_chla_day == Sys.Date()-2) {
+  # If this is two days ago, will fit model up through 2 days ago and start forecast on yesterday
+
+  
+  # For meterological drivers, will use the observed value of that driver to make the forecast on yesterday's date
+  yest_val <- cleaned_data$precipitation_flux[which(as_date(cleaned_data$datetime) == Sys.Date()-1)]
+  
+  ensemble_names <- c(paste0("ens_", 0:30), "ens_mean")
+  new_row <- tibble(
+    date = as_date(Sys.Date()-1),
+    !!!setNames(as.list(rep(yest_val, length(ensemble_names))), ensemble_names)
+  )
+  
+  precip_ens_forecast <- bind_rows(precip_ens_forecast, new_row)
+  precip_ens_forecast <- precip_ens_forecast %>%
+    arrange(date)
+
+  # remove rows from cleaned data with any meterological data from yesterday and today
+  cleaned_data <- cleaned_data %>%
+    filter(!as_date(datetime) %in% c(Sys.Date(), Sys.Date()-1))
+  
+} else {
+  stop("Chlorophyll-a data not up to date. Check data before proceeding with forecast.")
+}
+
+
+
 # Save the cleaned data to a RData file
 save(cleaned_data, file = "cleaned_data.RData")
 
+# Separately save weather forecast data to an .RData file
+save(precip_ens_forecast, file = "precip_ens_forecast.RData")
 
 
 

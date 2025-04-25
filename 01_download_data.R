@@ -115,5 +115,4 @@ precip_ens_forecast <- weather_forecast %>%
   ungroup()
 
 
-# Separately save weather forecast data to an .RData file
-save(precip_ens_forecast, file = "precip_ens_forecast.RData")
+

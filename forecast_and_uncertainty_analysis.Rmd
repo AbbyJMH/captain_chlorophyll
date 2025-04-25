@@ -17,11 +17,117 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ecoforecastR)
 library(rjags)
+library(lubridate)
 
 load("cleaned_data.RData")
 load("combined_factors_noburnin.RData") #loads in params and predict
-load("precip_ens_forecast.RData") 
+load("precip_ens_forecast.RData") # loads in esemble precipitation forecast
 ```
+
+
+# Forecast Start Date
+
+Insert discussion TODO
+
+```{r}
+NT = 30 # forecast length
+hist_dates <- as_date(cleaned_data$datetime)
+forecast_dates <- seq.Date(from = tail(hist_dates, 1) + 1, by = "day", length.out = NT)
+dates <- c(hist_dates, forecast_dates)
+```
+
+# Driver Forecasts
+
+For precipitaiton flux, we are using a 30 member ensemble forecast from NOAA GEFS. The ensemble and their mean are plotted below. 
+
+```{r}
+# Filter down to just the 30 days we are forecasting for
+precip_ens_forecast <- precip_ens_forecast %>%
+  filter(date %in% forecast_dates)
+
+plot(precip_ens_forecast$date,
+     precip_ens_forecast$ens_0,
+     type = 'l', col = "gray", ylim = range(precip_ens_forecast[ , grepl("ens_", names(precip_ens_forecast))], na.rm = TRUE),
+     xlab = "Date", ylab = "Precipitation Forecast", main = "NOAA Ensemble Forecast with Mean")
+
+for(i in 0:30) {
+  col_name <- paste0("ens_", i)
+  lines(precip_ens_forecast$date,
+        precip_ens_forecast[[col_name]],
+        col = "gray")
+}
+
+lines(precip_ens_forecast$date, precip_ens_forecast$ens_mean, col = "blue", lwd = 3)
+```
+
+
+For water temperature, we will be using historical data for the dates being forecasted to create an ensemble forecast. 
+
+```{r}
+
+
+target_start <- forecast_dates[1]  #only month/day matter
+
+# Step 1: Prepare the data with date components
+temp_with_dates <- cleaned_data %>%
+  mutate(date = as_date(datetime),
+         year = year(date),
+         doy = yday(date))
+
+# Step 2: Loop over years and build the 30-day slices
+years <- unique(temp_with_dates$year)
+
+# Helper to extract 30-day windows for each year
+get_30_day_window <- function(y) {
+  start_date <- ymd(paste0(y, "-", month(target_start), "-", day(target_start)))
+  end_date <- start_date + days(NT - 1)
+  
+  temp_with_dates %>%
+    filter(date >= start_date & date <= end_date & year == y) %>%
+    arrange(date) %>%
+    mutate(day_index = row_number()) %>%
+    select(year, day_index, temperature)
+}
+
+# Step 3: Combine all years
+all_years_30d <- bind_rows(lapply(years, get_30_day_window))
+
+# Step 4: Pivot to wide format, one column per year
+temp_ensemble_df <- all_years_30d %>%
+  pivot_wider(names_from = year, values_from = temperature, names_prefix = "yr_")
+
+
+temp_ensemble_df$date <- forecast_dates
+
+# If any years have no data at all, remove them
+temp_ensemble_df <- temp_ensemble_df %>%
+    select(where(~ !all(is.na(.))))
+
+# Add a column with the mean forecast
+temp_ensemble_df <- temp_ensemble_df %>%
+  mutate(ens_mean = rowMeans(select(., starts_with("yr_")), na.rm = TRUE))
+
+```
+
+
+```{r}
+ensemble_cols <- grep("^yr_", names(temp_ensemble_df), value = TRUE)
+
+# Plot the first ensemble member to set up the plot
+plot(temp_ensemble_df$date, temp_ensemble_df$ens_mean,
+     type = "n", col = "grey", ylim = range(temp_ensemble_df[ ,ensemble_cols], na.rm = TRUE),
+     xlab = "Date", ylab = "Water Temperature", main = "30-day Historical Ensemble")
+
+# Loop through all ensemble member columns
+for (col_name in ensemble_cols) {
+  lines(temp_ensemble_df$date, temp_ensemble_df[[col_name]], col = "grey")
+}
+
+# Add the mean in blue
+lines(temp_ensemble_df$date, temp_ensemble_df$ens_mean, col = "blue", lwd = 2)
+```
+
+
 
 # Run forecast
 
@@ -61,22 +167,6 @@ prow = sample.int(nrow(as.matrix(params)), Nmc, replace = TRUE)
 ## Set up parameters
 param_matrix <- as.matrix(params)
 param.mean <- apply(param_matrix,2,mean) # Find mean parameter values 
-
-#find driver values TODO: fix this
-weather_forecast_cleaned <- weather_forecast %>%
-  pivot_wider(
-    names_from = variable,  # Use the variable.y column to create new columns
-    values_from = daily_val  # Use the daily_val column for the values
-  )
-precipitation <- weather_forecast_cleaned$precipitation_flux[-1] #remove 1st so dates line up
-
-dates <-  as.Date(cleaned_data$datetime)
-forecast_dates <- seq.Date(from = tail(dates, 1) + 1, by = "day", length.out = 30)
-dates <- c(dates, forecast_dates)
-
-forecast_dates_minus1 <- as_datetime(forecast_dates) - years(1)
-temperature <- cleaned_data$temperature[which(cleaned_data$datetime %in% forecast_dates_minus1)]
-
 ```
 
 
@@ -92,8 +182,8 @@ N.ic <- forecastN(IC,
                 param.mean["betatemp"],
                 param.mean["betaprecip"],
                 param.mean["betaX"],
-                temperature,
-                precipitation,
+                temp_ensemble_df$ens_mean,
+                precip_ens_forecast$ens_mean,
                 0)
 
 ```
@@ -115,28 +205,14 @@ N.ic.p <- forecastN(IC,
                 Betatemp.sample,
                 Betaprecip.sample,
                 BetaX.sample,
-                temperature,
-                precipitation,
+                temp_ensemble_df$ens_mean,
+                precip_ens_forecast$ens_mean,
                 0)
 ```
 
 ## Driver Uncertainty
 
-```{r}
-plot(precip_ens_forecast$date,
-     precip_ens_forecast$ens_0,
-     type = 'l', col = "gray", ylim = range(precip_ens_forecast[ , grepl("ens_", names(precip_ens_forecast))], na.rm = TRUE),
-     xlab = "Date", ylab = "Precipitation Forecast", main = "NOAA Ensemble Forecast with Mean")
 
-for(i in 0:30) {
-  col_name <- paste0("ens_", i)
-  lines(precip_ens_forecast$date,
-        precip_ens_forecast[[col_name]],
-        col = "gray")
-}
-
-lines(precip_ens_forecast$date, precip_ens_forecast$ens_mean, col = "blue", lwd = 3)
-```
 
 
 ## Process Uncertainty
@@ -188,7 +264,7 @@ ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.ci[1,],N.ic.p.ci[3,],col= "red")
 ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.ci[1,],N.ic.ci[3,],col= "green")
 
 
-lines(tail(dates, 30),N.ci[2,],lwd=0.5)
+lines(tail(dates, 30),N.ic.ci[2,],lwd=0.5)
 
 
 
