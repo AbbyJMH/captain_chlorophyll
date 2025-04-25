@@ -43,8 +43,7 @@ cleaned_data <- merged_data %>%
 # Save the cleaned data to a RData file
 save(cleaned_data, file = "cleaned_data.RData")
 
-# Separately save weather forecast data to an .RData file
-save(weather_forecast, file = "weather_forecast.RData")
+
 
 
 

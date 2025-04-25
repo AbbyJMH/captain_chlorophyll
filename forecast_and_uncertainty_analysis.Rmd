@@ -20,7 +20,7 @@ library(rjags)
 
 load("cleaned_data.RData")
 load("combined_factors_noburnin.RData") #loads in params and predict
-load("weather_forecast.RData") 
+load("precip_ens_forecast.RData") 
 ```
 
 # Run forecast
@@ -123,7 +123,19 @@ N.ic.p <- forecastN(IC,
 ## Driver Uncertainty
 
 ```{r}
+plot(precip_ens_forecast$date,
+     precip_ens_forecast$ens_0,
+     type = 'l', col = "gray", ylim = range(precip_ens_forecast[ , grepl("ens_", names(precip_ens_forecast))], na.rm = TRUE),
+     xlab = "Date", ylab = "Precipitation Forecast", main = "NOAA Ensemble Forecast with Mean")
 
+for(i in 0:30) {
+  col_name <- paste0("ens_", i)
+  lines(precip_ens_forecast$date,
+        precip_ens_forecast[[col_name]],
+        col = "gray")
+}
+
+lines(precip_ens_forecast$date, precip_ens_forecast$ens_mean, col = "blue", lwd = 3)
 ```
 
 

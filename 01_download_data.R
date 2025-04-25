@@ -67,42 +67,6 @@ historical_weather_temp <- historical_weather_temp |>
 historical_weather <- rbind(historical_weather_rad, historical_weather_precip, historical_weather_temp)
 
 
-                          
-# Download forecasted weather data
-yest_date <- Sys.Date() - lubridate::days(1) # Need to use yesterdays forecast (today's not available yet)
-weather_forecast <- neon4cast::noaa_stage2(start_date = yest_date)
-
-#gather radiation and air temperature as daily mean
-weather_forecast_radandtemp <- weather_forecast |> 
-                      filter(datetime >= Sys.Date(),
-                             site_id == our_site,
-                             variable %in% weather_variables[c(1,2,4)]) |>
-                      collect()
-
-# Aggregate to daily mean
-weather_forecast_radandtemp <- weather_forecast_radandtemp |>
-                        mutate(datetime = as.Date(datetime)) |>
-                        group_by(datetime, site_id, variable) |> 
-                        summarise(daily_val = mean(prediction)) |>
-                        ungroup()
-
-#get precipitation as a daily sum
-weather_forecast_precip <- weather_forecast |> 
-  filter(datetime >= Sys.Date(),
-         site_id == our_site,
-         variable %in% weather_variables[3]) |>
-  collect()
-
-#Compute sum
-weather_forecast_precip <- weather_forecast_precip |>
-  mutate(datetime = as.Date(datetime)) |>
-  group_by(datetime, site_id, variable) |> 
-  summarise(daily_val = sum(prediction)) |>
-  ungroup()
-
-#Combine data
-weather_forecast <- rbind(weather_forecast_radandtemp, weather_forecast_precip)
-
 # Loading the data from NEON
 our_site <- "BARC"  # Site of interest
 data_product_id <- "DP1.20288.001"  # NEON Water Quality Data
@@ -122,3 +86,34 @@ waq_filtered <- waq_data |>
                  summarise(daily_pH = mean(pH, na.rm = TRUE),
                            daily_turbidity = mean(turbidity, na.rm = TRUE)) |> 
                  ungroup()
+
+
+
+##############################################
+## Download and save forecast ensemble as well
+## Note: Only need precipitation forecast
+
+# Download forecasted weather data
+yest_date <- Sys.Date() - lubridate::days(1) # Need to use yesterdays forecast (today's not available yet)
+weather_forecast <- neon4cast::noaa_stage2(start_date = yest_date)
+
+# filter down to just our site and just precipitation
+weather_forecast <- weather_forecast |>
+  filter(datetime >= Sys.Date(),
+         site_id == our_site,
+         variable == "precipitation_flux") |>
+  collect()
+
+
+precip_ens_forecast <- weather_forecast %>%
+  mutate(date = as_date(datetime)) %>%  # convert to date
+  group_by(date, parameter) %>%
+  summarise(daily_avg = sum(prediction, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = parameter, values_from = daily_avg, names_prefix = "ens_") %>%
+  rowwise() %>%
+  mutate(ens_mean = mean(c_across(starts_with("ens_")), na.rm = TRUE)) %>%
+  ungroup()
+
+
+# Separately save weather forecast data to an .RData file
+save(precip_ens_forecast, file = "precip_ens_forecast.RData")
