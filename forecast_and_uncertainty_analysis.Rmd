@@ -184,3 +184,11 @@ lines(tail(dates, 30),N.ic[2,],lwd=0.5)
 #ecoforecastR::ciEnvelope(time2,N.I.ci[1,],N.I.ci[3,],col=col.alpha(N.cols[1],trans))
 #lines(time2,N.I.ci[2,],lwd=0.5)
 ```
+
+```
+Above, we are evaluating how the model performs. Our model predicts chlorophyll-a (Chla) concentrations for 30 days into the future, using environmental drivers (temperature and precipitation) and MCMC-sampled parameters. The light blue band shows the historical fit, which closely captures the observed data, indicating that the model is fitting past values well. This is of course with the exception that during areas of missing data, the model fit balloons because missing data creates a lot of uncertainty. This obviously will increase the credible interval of the model. The green forecast band includes uncertainty from the initial conditions only, while the red forecast band includes both initial condition and parameter uncertainty. As expected, the red band is wider, reflecting additional uncertainty from parameter variability. The forecast remains within plausible ecological bounds for chlorophyll-a measurements (0–5), and expands appropriately into the future with reasonable amounts of uncertainty.
+```
+
+```
+First, we incorporate initial condition uncertainty by sampling initial states from the posterior predictive distribution. This is reflected by the green envelope in the forecast. Next, we include parameter uncertainty by sampling model parameters from the MCMC output, which produces a wider red envelope in the forecast.
+```
