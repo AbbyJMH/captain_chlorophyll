@@ -4,71 +4,43 @@ output: html_document
 ---
 
 ```{r echo = T, results = 'hide'}
-source("01_download_data.R")
-source("02_combine_data.R")
-```
-
-
-```{r}
-aquatics_targets |>
-    ggplot(aes(x = datetime, y = observation)) +
-      geom_point(size = .5) +
-      facet_grid(variable~site_id, scales = "free_y") +
-      theme_bw()
-```
-
-
-```{r}
-weather_graph_labels <- c(`BARC` = "BARC",
-                          `precipitation_flux` = "precipitation_flux",
-                          `surface_downwelling_longwave_flux_in_air` = "longwave_flux",
-                          `surface_downwelling_shortwave_flux_in_air` = "shortwave_flux",
-                           `air_temperature` = "air_temperature")
-historical_weather |>
-    ggplot(aes(x = datetime, y = daily_mean)) +
-      geom_point(size = .5) +
-      facet_grid(variable~site_id,
-                 scales = "free_y",
-                 labeller = as_labeller(weather_graph_labels)) +
-      theme_bw()
-```
-
-
-```{r}
-weather_forecast |>
-    ggplot(aes(x = datetime, y = daily_mean)) +
-      geom_point(size = .5) +
-      facet_grid(variable~site_id,
-                 scales = "free_y",
-                 labeller = as_labeller(weather_graph_labels)) +
-      theme_bw()
-```
-
-
-```{r}
-# Plotting pH values from 0-14
-waq_filtered_clean <- waq_filtered |>
-    filter(daily_pH >= 0, daily_pH <= 14)  # Remove outliers
-
-waq_filtered_clean |>
-    ggplot(aes(x = date, y = daily_pH)) +
-      geom_point(color = "blue", size = .5) +
-      facet_wrap(~siteID, scales = "free_y") +
-      labs(title = "Daily pH Levels",
-           x = "Date",
-           y = "pH Value") +
-      ylim(0, 14) +  # Set y-axis range
-      theme_bw()
+load("cleaned_data.RData")
 ```
 
 ```{r}
-# Plotting turbidity values
-waq_filtered |>
-    ggplot(aes(x = date, y = daily_turbidity)) +
-      geom_point(color = "darkgreen", size = .5) +
-      facet_wrap(~siteID, scales = "free_y") +
-      labs(title = "Daily Turbidity Levels",
-           x = "Date",
-           y = "Turbidity (NTU)") +
-      theme_bw()
+plot(cleaned_data$datetime, cleaned_data$chla,
+     xlab = "Date",
+     ylab = "Daily Mean Chlorophyl-a")
+
+plot(cleaned_data$datetime, cleaned_data$oxygen,
+     xlab = "Date",
+     ylab = "Daily Mean Dissolved Oxygen")
+
+plot(cleaned_data$datetime, cleaned_data$daily_pH,
+     xlab = "Date",
+     ylab = "Daily Mean pH")
+
+plot(cleaned_data$datetime, cleaned_data$daily_turbidity,
+     xlab = "Date",
+     ylab = "Daily Mean Turbidity")
+
+plot(cleaned_data$datetime, cleaned_data$temperature,
+     xlab = "Date",
+     ylab = "Daily Mean Water Temperature")
+
+plot(cleaned_data$datetime, cleaned_data$air_temperature,
+     xlab = "Date",
+     ylab = "Daily Mean Air Temperature")
+
+plot(cleaned_data$datetime, cleaned_data$precipitation_flux,
+     xlab = "Date",
+     ylab = "Daily Total Precipitation Flux")
+
+plot(cleaned_data$datetime, cleaned_data$surface_downwelling_longwave_flux_in_air,
+     xlab = "Date",
+     ylab = "Daily Mean Longwave Radiation")
+
+plot(cleaned_data$datetime, cleaned_data$surface_downwelling_shortwave_flux_in_air,
+     xlab = "Date",
+     ylab = "Daily Mean Shortwave Raditaion")
 ```
