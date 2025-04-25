@@ -25,9 +25,9 @@ load("precip_ens_forecast.RData") # loads in esemble precipitation forecast
 ```
 
 
-# Forecast Start Date
+## Forecast Start Date
 
-Insert discussion TODO
+The forecast starts on the first day after the last NEON chlorophyll-a measurement was released. This is typically yesterday, as in the day before the forecast is being made. The forecast then runs for 30 days, as is specified in the NEON forecasting challenge.  
 
 ```{r}
 NT = 30 # forecast length
@@ -36,9 +36,16 @@ forecast_dates <- seq.Date(from = tail(hist_dates, 1) + 1, by = "day", length.ou
 dates <- c(hist_dates, forecast_dates)
 ```
 
+On the day this was knitted (and so this forecast was generated), the forecast begins on `r forecast_dates[1]`.
+
+
 # Driver Forecasts
 
-For precipitaiton flux, we are using a 30 member ensemble forecast from NOAA GEFS. The ensemble and their mean are plotted below. 
+## Precipitation
+
+For precipitation flux, we are using a 30 member ensemble forecast from NOAA GEFS. Note due to the timing of the first day of the forecast, observed NOAA meteorological data is typically available for that first day. So the driver value is observed for the first day of the forecast and then is taken from the NOAA ensemble forecast for the remaining 29 days. 
+
+The ensemble driver values and their mean are plotted below.
 
 ```{r}
 # Filter down to just the 30 days we are forecasting for
@@ -48,7 +55,7 @@ precip_ens_forecast <- precip_ens_forecast %>%
 plot(precip_ens_forecast$date,
      precip_ens_forecast$ens_0,
      type = 'l', col = "gray", ylim = range(precip_ens_forecast[ , grepl("ens_", names(precip_ens_forecast))], na.rm = TRUE),
-     xlab = "Date", ylab = "Precipitation Forecast", main = "NOAA Ensemble Forecast with Mean")
+     xlab = "Date", ylab = "Precipitation Flux", main = "NOAA Ensemble Forecast with Mean")
 
 for(i in 0:30) {
   col_name <- paste0("ens_", i)
@@ -60,11 +67,12 @@ for(i in 0:30) {
 lines(precip_ens_forecast$date, precip_ens_forecast$ens_mean, col = "blue", lwd = 3)
 ```
 
+## Water Temperature
 
-For water temperature, we will be using historical data for the dates being forecasted to create an ensemble forecast. 
+For water temperature, we will be using historical data for the dates being forecasted to create an ensemble forecast. So this will use the water temperature on the relevant dates for years 2019 to last year. The code below organizes these values into a data fram and then plots them with the mean forecast.
 
 ```{r}
-
+## Set up data frame with historical ensemble
 
 target_start <- forecast_dates[1]  #only month/day matter
 
@@ -116,7 +124,7 @@ ensemble_cols <- grep("^yr_", names(temp_ensemble_df), value = TRUE)
 # Plot the first ensemble member to set up the plot
 plot(temp_ensemble_df$date, temp_ensemble_df$ens_mean,
      type = "n", col = "grey", ylim = range(temp_ensemble_df[ ,ensemble_cols], na.rm = TRUE),
-     xlab = "Date", ylab = "Water Temperature", main = "30-day Historical Ensemble")
+     xlab = "Date", ylab = "Water Temperature", main = "30-day Historical Ensemble and Mean")
 
 # Loop through all ensemble member columns
 for (col_name in ensemble_cols) {
@@ -129,9 +137,13 @@ lines(temp_ensemble_df$date, temp_ensemble_df$ens_mean, col = "blue", lwd = 2)
 
 
 
-# Run forecast
+# Ensemble Forecast and Uncertainty Analysis
+
+Our forecast will involve four sources of uncertainty: initial conditions, parameter values, driver values, and process error.
 
 ## Set up
+
+We first define a helper function that will generate ensemble forecasts.
 
 ```{r}
 forecastN <- function(IC,
@@ -226,8 +238,6 @@ precip_ens_matrix <- precip_ens_forecast %>%
   as.matrix()
 precip_cols <- sample.int(ncol(precip_ens_matrix),Nmc,replace=TRUE)
 
-
-
 N.ic.p.d <- forecastN(IC,
                 Nmc,
                 Betaintercept.sample,
@@ -260,7 +270,7 @@ N.ic.p.d.pr <- forecastN(IC,
                 sd.sample)
 ```
 
-# Plot
+# Plotted Ensemble Forecast with Partitioned Uncertainty
 
 ```{r}
 ## you can adjust this line to zoom in and out on specific time intervals
@@ -319,8 +329,37 @@ legend("topleft", legend = c("IC Uncertainty", "Parameter Uncertainty", "Driver 
 ```
 
 
+## Ensemble Forecast in Context
+
+```{r}
+## you can adjust this line to zoom in and out on specific time intervals
+time.rng = c(300,nrow(cleaned_data)+30) 
+
+plot(dates, 1:length(dates) ,type='n',
+     ylim = y.rng,
+     #log='y',
+     xlim=dates[time.rng],
+     xlab = "Time",
+     ylab = "Chlorophyll-a",
+     main = "Uncertainty Analysis")
+## adjust x-axis label to be monthly if zoomed
+#if(diff(time.rng) < 100){ 
+#  axis.Date(1, at=seq(cleaned_data$datetime[time.rng[1]],cleaned_data$datetime[time.rng[2]],by='month'), format = "%Y-%m")
+#}
+ecoforecastR::ciEnvelope(as.Date(cleaned_data$datetime),ci[1,],ci[3,],col=ecoforecastR::col.alpha("lightBlue",0.75))
+points(as.Date(cleaned_data$datetime), cleaned_data$chla,pch="+",cex=0.5)
+
+# Add forecast
+ecoforecastR::ciEnvelope(tail(dates, 30),N.ic.p.d.pr.ci[1,],N.ic.p.d.pr.ci[3,],col= "blue") # Process
+lines(tail(dates, 30),N.ic.p.d.pr.ci[2,],lwd=2)
+
+
+```
+
 
 # Relative Variance
+
+Next, we found the variances of each forecast generated in the first part of the uncertainty analysis. This allows us to look at the relative variance introduced by each source of uncertainty, and how that changes over time. It is clear that for all time, process error is dominating our forecast.
 
 ```{r}
 ### calculation of variances
@@ -332,7 +371,7 @@ varMat   <- rbind(varI,varIP,varIPD,varIPDPR)
 
 
 ## in-sample stacked area plot
-V.pred.rel.in <- apply(varMat[-5,],2,function(x) {x/max(x)})
+V.pred.rel.in <- apply(varMat,2,function(x) {x/max(x)})
 plot(forecast_dates,V.pred.rel.in[1,],ylim=c(0,1),type='n',main="Relative Variance",ylab="Proportion of Variance",xlab="time")
 ciEnvelope(forecast_dates,rep(0,ncol(V.pred.rel.in)),V.pred.rel.in[1,],col=N.cols[1])
 ciEnvelope(forecast_dates,V.pred.rel.in[1,],V.pred.rel.in[2,],col=N.cols[2])
